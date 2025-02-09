@@ -1,0 +1,40 @@
+# Ignore directories
+node_modules/
+venv/
+__pycache__/
+data/
+logs/
+dist/
+build/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Ignore Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment files
+.env
+.env.local
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.iml
+
+# Ignore log files
+*.log
+
+# Ignore compiled files
+*.o
+*.so
+*.out
+*.class
+*.exe
+
+# Add your own ignore rules below:
+lib/
