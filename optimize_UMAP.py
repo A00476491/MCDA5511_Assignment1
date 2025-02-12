@@ -54,8 +54,8 @@ def compute_spearman_correlation(embeddings1, embeddings2, name='Max Zhao'):
 
     similarities1 = compute_similarity_single_to_many(embeddings1, name)
     similarities2 = compute_similarity_single_to_many(embeddings2, name)
-    ranking1 = np.argsort(similarities1[0]) + 1
-    ranking2 = np.argsort(similarities2[0]) + 1
+    ranking1 = np.argsort(-1 * similarities1[0]) + 1
+    ranking2 = np.argsort(-1 * similarities2[0]) + 1
 
     rho, _ = spearmanr(ranking1, ranking2)
     print(f"Spearman’s 𝜌: {rho}")
@@ -65,13 +65,15 @@ def compute_spearman_average_correlation(embeddings1, embeddings2):
 
     res = 0
     for k in embeddings1.keys():
-        res = compute_spearman_correlation(embeddings1, embeddings2, name=k)
+        res += compute_spearman_correlation(embeddings1, embeddings2, name=k)
     return res / len(embeddings1.keys())
 
 def do_UMAP(embeddings, parameters, vis_name=None, seed=42):
 
     reducer = umap.UMAP(n_neighbors=parameters['n_neighbors'], \
-                        min_dist=parameters['min_dist'], random_state=seed)
+                        min_dist=parameters['min_dist'], \
+                        random_state=seed,) # \
+                        # metric='cosine')
     scaler = StandardScaler()
     scaled_data = scaler.fit_transform(list(embeddings.values()))
     reduced_data = reducer.fit_transform(scaled_data)
@@ -97,14 +99,13 @@ if __name__ == '__main__':
 
     person_embeddings = generate_embedding(model='all-MiniLM-L6-v2')
 
-    # 设置超参数搜索范围
-    n_neighbors_list = [5, 8, 10, 15, 20, 25, 30, 40, 50]
+    # search space
+    n_neighbors_list = [5, 8, 10, 13, 15, 20]
     min_dist_list = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-    # 进行超参数搜索
+    # do search
     best_score = -np.inf
     best_params = {}
-
     for n_neighbors, min_dist in product(n_neighbors_list, min_dist_list):
         
         parameters = {'n_neighbors': n_neighbors, 'min_dist': min_dist}
