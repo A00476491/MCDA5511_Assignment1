@@ -1,0 +1,28 @@
+name: branch__environment
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - sentence-transformers
+    - umap-learn
+    - matplotlib
+    - numpy
+    - scipy
+    - scikit-learn
+    - hyperopt
+    - optuna
+    - pandas
+    - tqdm
+    - joblib
+    - pyyaml
+    - umap
+    - scipy
+    - scikit-learn
+    - sentence-transformers
+    - matplotlib
+    - pyvis
+    - numpy
+    - seaborn
+    - branca
