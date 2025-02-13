@@ -2,7 +2,7 @@
 
 ## 1. Create the environment
 
-   On rash:
+   On Bash:
 
    conda env create -f environment1.yml
 
