@@ -128,7 +128,7 @@ def compute_spearman_correlation(embeddings1, embeddings2, name='SicongFu', topN
     print(ranking1)
     print(ranking2)
     # spearmanr(ranking1, ranking2) calculates the correlation of rankings.
-    rho, _ = spearmanr(ranking1, ranking2)
+    rho, _ = spearmanr(similarities1[0], similarities2[0])
     return rho
 
 if __name__ == '__main__':
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     for name in names:
 
         # rho = compute_spearman_correlation(person_embeddings1, person_embeddings2, name)
-        rho = compute_spearman_correlation(person_embeddings1, person_embeddings2, name)
+        rho = compute_spearman_correlation(person_embeddings1, person_embeddings3, name)
         # rho = compute_spearman_correlation(person_embeddings2, person_embeddings3, name)
         print(f'correlation={rho:.4f}')
     

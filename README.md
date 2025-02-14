@@ -20,7 +20,7 @@
 
       • -1 means that the two rankings are completely opposite in monotonicity.
 
-   The results are all close to -0.04. From my(SicongFu's) perspective, the similarity rankings I get with all-MiniLM-L6-v2 are basically incompatible with the rankings of another model (all-MiniLM-L12-v2 or all-mpnet-base-v2).
+   The results are all close to “correlation=0.86”. From my(SicongFu's) perspective, This shows that the correlation between these rankings (all-MiniLM-L6-v2 with all-MiniLM-L12-v2 or all-mpnet-base-v2) is high, which means that in judging the text similarity, the output results of these models are relatively close.
 
 ## 3. Analyze the causes 
 
