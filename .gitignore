@@ -38,3 +38,4 @@ Thumbs.db
 
 # Add your own ignore rules below:
 lib/
+vis/
