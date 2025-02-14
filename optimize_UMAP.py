@@ -10,6 +10,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn_extra.cluster import KMedoids
 from sentence_transformers import SentenceTransformer
 import warnings
+import matplotlib.image as mpimg
+from tabulate import tabulate
 
 # Suppress warnings
 warnings.simplefilter("ignore")
@@ -103,12 +105,12 @@ def do_UMAP(embeddings, parameters=None, vis_name=None, seed=42, cluster_labels=
             colors = matplotlib.colormaps["tab10"]
             for i in range(3):
                 cluster_points = [j for j in range(len(cluster_labels)) if cluster_labels[j] == i]
-                plt.scatter(x[cluster_points], y[cluster_points], s=100, color=colors(i), label=f'Cluster {i}')
+                plt.scatter(x[cluster_points], y[cluster_points], s=300, color=colors(i), label=f'Cluster {i}')
         else:
-            plt.scatter(x, y, s=100)
+            plt.scatter(x, y, s=300)
         
         for i, name in enumerate(labels):
-            plt.annotate(name, (x[i], y[i]), fontsize=12)
+            plt.annotate(name.split()[0], (x[i], y[i]), fontsize=24)
         
         plt.axis('off')
         plt.savefig(vis_name, dpi=800)
@@ -141,16 +143,65 @@ def grid_search(embeddings, search_space):
     print(f'Best params: {best_params}, Best score: {best_score:.4f}')
     return best_params
 
+def tabulate_output(results):
+
+    headers = ["Seed 42", "Seed 52", "Seed 72"]
+    rows = [
+        ["Default Parameters"] + results[0],
+        ["Best Parameters"] + results[1],
+    ]
+
+    table = tabulate(rows, headers=headers, tablefmt="grid")
+    print(table)
+
+def matrix_charts():
+
+    image_files = [
+        "./vis/umap_default_parameters_seed_42.png",
+        "./vis/umap_default_parameters_seed_52.png",
+        "./vis/umap_default_parameters_seed_72.png",
+        "./vis/umap_best_parameters_seed_42.png",
+        "./vis/umap_best_parameters_seed_52.png",
+        "./vis/umap_best_parameters_seed_72.png",
+    ]
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+    seed_values = ["Seed 42", "Seed 52", "Seed 72"]
+    param_types = ["Default Parameters", "Best Parameters"]
+
+    for i, seed in enumerate(seed_values):
+        axes[0, i].set_title(seed, fontsize=14, pad=20)
+    fig.text(0.06, 0.75, "Default Parameters", va='center', ha='center', fontsize=14, rotation=90)
+    fig.text(0.06, 0.25, "Best Parameters", va='center', ha='center', fontsize=14, rotation=90)
+    
+    
+    for i, param in enumerate(param_types):
+        for j, seed in enumerate(seed_values):
+            idx = i * 3 + j 
+            img = mpimg.imread(image_files[idx])
+            ax = axes[i, j]
+            ax.imshow(img)
+            ax.axis("off")
+
+            for spine in ax.spines.values():
+                spine.set_edgecolor('black')
+                spine.set_linewidth(2) 
+
+    plt.tight_layout()
+    plt.savefig("./vis/umap_comparison.png", dpi=800, bbox_inches="tight")
+
 if __name__ == '__main__':
     # Step1: Generate embeddings
     person_embeddings = generate_embedding(model_name='all-MiniLM-L6-v2')
     
-    # Step2: Apply clustering by cCosine similarity
+    # Step2: Apply clustering by Cosine similarity
     kmedoids = KMedoids(n_clusters=3, metric="cosine", random_state=42)
     cluster_labels = kmedoids.fit_predict(list(person_embeddings.values()))
     
     # Step3: Perform UMAP with default parameters for different seeds
     umap_seeds = [42, 52, 72]
+    results = [[], []]
     for umap_seed in umap_seeds:
         reduced_data = do_UMAP(
             person_embeddings, 
@@ -159,17 +210,19 @@ if __name__ == '__main__':
             cluster_labels=cluster_labels
         )
         avg_correlation = compute_spearman_average_correlation(person_embeddings, reduced_data)
-        print(f'correlation={avg_correlation:.4f} for seed={umap_seed} with default parameters')
+        # print(f'correlation={avg_correlation:.4f} for seed={umap_seed} with default parameters')
+        results[0].append(avg_correlation)
     
     # Step4: Perform grid search to optimize UMAP parameters
     search_space = {
-        'n_neighbors': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-        'min_dist': [0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5, 0.7, 0.9],
-        'spread': [0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+        'n_neighbors': [10], # [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        'min_dist': [0.25], # [0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5, 0.7, 0.9],
+        'spread': [8], # [0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     }
     best_params = grid_search(person_embeddings, search_space)
-    
+     
     # Step5: Perform UMAP with best parameters for different seeds
+    umap_seeds = [42, 52, 72]
     for umap_seed in umap_seeds:
         reduced_data = do_UMAP(
             person_embeddings, 
@@ -179,8 +232,10 @@ if __name__ == '__main__':
             cluster_labels=cluster_labels
         )
         avg_correlation = compute_spearman_average_correlation(person_embeddings, reduced_data)
-        print(f'correlation={avg_correlation:.4f} for seed={umap_seed} with best parameters')
-
+        # print(f'correlation={avg_correlation:.4f} for seed={umap_seed} with best parameters')
+        results[1].append(avg_correlation)
+    tabulate_output(results)
+    matrix_charts()
     
 
 

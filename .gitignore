@@ -37,5 +37,3 @@ Thumbs.db
 *.exe
 
 # Add your own ignore rules below:
-lib/
-vis/

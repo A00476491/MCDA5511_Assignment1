@@ -1,0 +1,15 @@
+name: ml
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - matplotlib
+  - scikit-learn
+  - umap-learn
+  - tabulate
+  - pip
+  - pip:
+      - scikit-learn-extra
+      - sentence-transformers
