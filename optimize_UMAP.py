@@ -1,27 +1,18 @@
 import csv
 import umap
-from scipy import spatial
 from sklearn.preprocessing import StandardScaler
 from sentence_transformers import SentenceTransformer
 import matplotlib.pyplot as plt
-from collections import defaultdict
-import pyvis
-from pyvis.network import Network
-import numpy as np
-import seaborn as sns
-import branca.colormap as cm
-import branca
-import pandas as pd
-import re
 from textwrap import wrap
-import json
 import numpy as np
 from scipy.stats import spearmanr
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from itertools import product
 import matplotlib.image as mpimg
-import copy
+from sklearn.cluster import KMeans
+import optuna
+from sklearn.neighbors import NearestNeighbors
 
 project_path = './'
 
@@ -74,18 +65,18 @@ def compute_spearman_average_correlation(embeddings1, embeddings2):
         res += compute_spearman_correlation(embeddings1, embeddings2, name=k)
     return res / len(embeddings1.keys())
 
-def do_UMAP(embeddings, parameters=None, vis_name=None, seed=42):
+def do_UMAP(embeddings, parameters=None, vis_name=None, seed=42, do_kmeans=False, mark_wrong=False):
 
     if parameters is not None:
         reducer = umap.UMAP(n_neighbors=parameters['n_neighbors'], \
                             min_dist=parameters['min_dist'], \
                             random_state=seed,
                             spread=parameters['spread'],
-                            metric='cosine',
+                            metric='euclidean',
                             n_components=2)
     else:
         reducer = umap.UMAP(random_state=seed,
-                            metric='cosine',
+                            metric='euclidean',
                             n_components=2)     
            
     with np.errstate(divide='ignore'):
@@ -101,8 +92,52 @@ def do_UMAP(embeddings, parameters=None, vis_name=None, seed=42):
         label = list(embeddings.keys())
 
         # Plotting and annotating data points
-        plt.figure(figsize=(12, 12)) 
-        plt.scatter(x, y, s=100)
+        plt.figure(figsize=(12, 12))
+        if do_kmeans:
+            num_clusters = 3 
+            kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
+            cluster_labels = kmeans.fit_predict(reduced_data)
+            colors = plt.cm.get_cmap("tab10", num_clusters)
+            for i in range(num_clusters):
+                cluster_points = [j for j in range(len(cluster_labels)) if cluster_labels[j] == i]
+                plt.scatter([x[j] for j in cluster_points], 
+                            [y[j] for j in cluster_points], 
+                            s=100, 
+                            color=colors(i), 
+                            label=f'Cluster {i}')
+        elif mark_wrong:
+            topN = 5
+            original_neighbors = NearestNeighbors(n_neighbors=topN+1, metric='cosine').fit(scaled_data)
+            _, original_indices = original_neighbors.kneighbors(scaled_data)
+            reduced_neighbors = NearestNeighbors(n_neighbors=topN+1, metric='euclidean').fit(reduced_data)
+            _, reduced_indices = reduced_neighbors.kneighbors(reduced_data)
+
+            incorrect_points = []
+            correct_points = []
+            for i in range(len(reduced_data)):
+
+                original_set = set(original_indices[i][1:])
+                reduced_set = set(reduced_indices[i][1:])
+
+                print(original_set)
+                print(reduced_set)
+                intersection = len(original_set & reduced_set)
+                union = len(original_set | reduced_set)
+                print(intersection / union)
+                if intersection / union < 0.5:
+                    incorrect_points.append(i)
+                else:
+                    correct_points.append(i)
+
+            # import pdb; pdb.set_trace()
+
+            if incorrect_points:
+                plt.scatter(reduced_data[incorrect_points, 0], reduced_data[incorrect_points, 1], s=100, color='red')
+            if correct_points:
+                plt.scatter(reduced_data[correct_points, 0], reduced_data[correct_points, 1], s=100)
+        else:
+            plt.scatter(x, y, s=100)
+
         for i, name in enumerate(label):
             plt.annotate(name, (x[i], y[i]), fontsize="20")
         plt.axis('off')
@@ -110,20 +145,19 @@ def do_UMAP(embeddings, parameters=None, vis_name=None, seed=42):
             plt.savefig('./{}'.format(vis_name), dpi=800)
         except:
             return reduced_embedding
-            # import  pdb; pdb.set_trace();
-        # visualization.png
 
     return reduced_embedding
 
-
-if __name__ == '__main__':
-
-    person_embeddings = generate_embedding(model='all-MiniLM-L6-v2')
+def grid_search(embeddings):
 
     # search space
-    n_neighbors_list = [14] # [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    min_dist_list = [0.9] # [0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5, 0.7, 0.9]
-    spread_list = [9] # [0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    n_neighbors_list = [5] #[10] [14] # [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    min_dist_list = [0.25] # [0.9] # [0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5, 0.7, 0.9]
+    spread_list = [8] # [9] # [0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    # n_neighbors_list = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    # min_dist_list = [0.05, 0.075, 0.1, 0.15, 0.2, 0.25, 0.3, 0.5, 0.7, 0.9]
+    # spread_list = [0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     # best parameter search
     best_score = -np.inf
@@ -134,8 +168,8 @@ if __name__ == '__main__':
             continue
         
         parameters = {'n_neighbors': n_neighbors, 'min_dist': min_dist, 'spread':spread}
-        reduced_data = do_UMAP(person_embeddings, parameters, seed=42)
-        score = compute_spearman_average_correlation(person_embeddings, reduced_data)
+        reduced_data = do_UMAP(embeddings, parameters, seed=42)
+        score = compute_spearman_average_correlation(embeddings, reduced_data)
         
         if score > best_score:
             best_score = score
@@ -144,11 +178,38 @@ if __name__ == '__main__':
         print(f'n_neighbors={n_neighbors}, min_dist={min_dist}, correlation={score:.4f}')
 
     print(f'Best params: {best_params}, Best score: {best_score:.4f}')
+    return best_params
 
+def optuna_search(embeddings):
+    def objective(trial):
+
+        n_neighbors = trial.suggest_int("n_neighbors", 2, 20)
+        min_dist = trial.suggest_float("min_dist", 0.0, 0.99)
+        spread = trial.suggest_float("spread", min_dist, 10)
+
+        reduced_embedding = do_UMAP(person_embeddings, \
+                                    parameters={'n_neighbors':n_neighbors, 'min_dist':min_dist, 'spread':spread}, \
+                                    seed=42)
+        score = compute_spearman_average_correlation(embeddings, reduced_embedding)
+        return score
     
-    reduced_data1 = do_UMAP(person_embeddings, seed=42, vis_name='vis1_ori.png')
-    reduced_data2 = do_UMAP(person_embeddings, seed=53, vis_name='vis2_ori.png')
-    reduced_data3 = do_UMAP(person_embeddings, seed=62, vis_name='vis3_ori.png')
+    sampler = optuna.samplers.TPESampler(seed=42)
+    study = optuna.create_study(direction="maximize", sampler=sampler)
+    study.optimize(objective, n_trials=300)
+    print("Best Parameters:", study.best_params)
+    return study.best_params
+
+
+if __name__ == '__main__':
+
+    person_embeddings = generate_embedding(model='all-MiniLM-L6-v2')
+
+    # best_params = optuna_search(person_embeddings)
+    best_params = grid_search(person_embeddings)
+
+    reduced_data1 = do_UMAP(person_embeddings, seed=42, vis_name='vis1_ori.png', mark_wrong=True)
+    reduced_data2 = do_UMAP(person_embeddings, seed=52, vis_name='vis2_ori.png', mark_wrong=True)
+    reduced_data3 = do_UMAP(person_embeddings, seed=32, vis_name='vis3_ori.png', mark_wrong=True)
     score1 = compute_spearman_average_correlation(person_embeddings, reduced_data1)
     print(f'correlation={score1:.4f}')
     score2 = compute_spearman_average_correlation(person_embeddings, reduced_data2)
@@ -157,9 +218,9 @@ if __name__ == '__main__':
     print(f'correlation={score3:.4f}') 
     
     
-    reduced_data1 = do_UMAP(person_embeddings, best_params, seed=42, vis_name='vis1_tune.png')
-    reduced_data2 = do_UMAP(person_embeddings, best_params, seed=52, vis_name='vis2_tune.png')
-    reduced_data3 = do_UMAP(person_embeddings, best_params, seed=63, vis_name='vis3_tune.png')
+    reduced_data1 = do_UMAP(person_embeddings, best_params, seed=42, vis_name='vis1_tune.png', mark_wrong=True)
+    reduced_data2 = do_UMAP(person_embeddings, best_params, seed=52, vis_name='vis2_tune.png', mark_wrong=True)
+    reduced_data3 = do_UMAP(person_embeddings, best_params, seed=32, vis_name='vis3_tune.png', mark_wrong=True)
     score1 = compute_spearman_average_correlation(person_embeddings, reduced_data1)
     print(f'correlation={score1:.4f}')
     score2 = compute_spearman_average_correlation(person_embeddings, reduced_data2)
