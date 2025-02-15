@@ -1,33 +1,24 @@
-## Instructions for use
+# Introduction
+This repository explores embeddings—what they are, how they change across different datasets and models, and how they appear in a 2D space. We use an interest dataset to gain insights into embeddings. The dataset contains sentence-level interests, all collected from real people.
 
-1. Collect or format your data in the following format
+## Instructions for Use
 
-| Name  | What are your interests? (or varying permutations of this question) |
-| ----- | ------------------------------------------------------------------- |
-| Alice | I love being the universal placeholder for every CS joke ever       |
-| Bob   | I too love being the universal placeholder for every CS joke        |
-
-2. Clone the repository
-3. Install all required packages using pip or conda:
-
-- `umap-learn`
-- `scikit-learn`
-- `scipy`
-- `sentence-transformers`
-- `matplotlib`
-- `pyvis`
-- `pandas`
-- `numpy`
-- `seaborn`
-- `branca`
-
-4. Run all cells
-5. Below is a visualization where each point represents a person's interests, and the distance between points reflects the similarity of interests.
+1. **Clone the repository**
+2. **Create the environment**
+   ```bash
+   conda env create -f environment.yml
+   conda activate 5511assignment1
+   ```
+3. **Run code**  
+   Below is a visualization where each point represents a person's interests, and the distance between points reflects the similarity of interests.
+   
    ![visualization](visualization.png)
 
-## What Are Embeddings
+---
+
+## Task1: What Are Embeddings
 ### Concept of Embedding
-Embedding is a method of converting text (words, phrases, or sentences) into numerical representations, enabling computers to understand and process natural language.
+Embedding is a kind of numerical representation of text (words, phrases, or sentences), enabling computers to understand and process natural language.
 Its core idea is that texts with similar meanings should be closer together in the numerical space.
 
 Think of each word or sentence as a unique point on a map, where words with similar meanings are located near each other.
@@ -39,44 +30,20 @@ In the visualization graph, we can see Anuja and Max are close to each other bec
 Embeddings convert words into numbers so that computers can process them. 
 But these aren’t just random numbers—they are carefully designed so that similar words get similar number patterns.
 
-## key Machine Learning Techniques for embeddings:
+### key Machine Learning Techniques for embeddings:
 Word2Vec:  **Word2Vec learns word relationships by predicting words in a sentence.**
 
-   Two methods:
+ Two methods:
 
 `Skip-Gram:` Predicts surrounding words given a target word.
 
 `CBOW (Continuous Bag of Words)`: Predicts the target word from surrounding words.
 
 
-## Dimension Reduction Analysis
+
+## Task3: Embedding sensitivity analysis (differrent models)
 
 ### Experiment Results
-
-| Seed  | 42   | 52   | 62   |
-|-------|------|------|------|
-| Default Parameter (Rank Correlation) | 0.21 | 0.21 | 0.31 |
-| Best Parameter (Rank Correlation)    | 0.70 | 0.51 | 0.61 |
-
-With the default parameters, the **rank correlation** between embeddings before and after dimensionality reduction is **0.21** when `seed=42`.  
-After parameter optimization, this increases significantly to **0.70**, effectively capturing the desired patterns, demonstrating the effectiveness of parameter tuning.
-
-For `seed=52` and `seed=62`, the rank correlation with default parameters is **0.21** and **0.31**, respectively.  
-Using the optimized parameters (originally tuned for `seed=42`), the correlation improves to **0.51** and **0.61**, showing that the optimization generalizes well across different seeds.
-
-From the UMAP plots, the optimized UMAP clearly forms stable clusters, whereas the default settings fail to do so. This visually confirms the effectiveness of the optimization.
-
-# For branch embedding-sensitivity-tests
-
-## 1. Create the environment
-
-   On Bash:
-
-   conda env create -f environment1.yml
-
-   conda activate branch__environment 
-
-## 2. Analyze the results
 
    Spearman’s rank correlation coefficient is mainly used to measure the monotonicity between two ranking sequences.
 
@@ -90,10 +57,28 @@ From the UMAP plots, the optimized UMAP clearly forms stable clusters, whereas t
 
    The results are all close to “correlation=0.86”. From my(SicongFu's) perspective, This shows that the correlation between these rankings (all-MiniLM-L6-v2 with all-MiniLM-L12-v2 or all-mpnet-base-v2) is high, which means that in judging the text similarity, the output results of these models are relatively close.
 
-## 3. Analyze the causes 
+### Analyze the causes 
 
    Different models differ in structural depth, number of parameters, and pre-training corpus. Taking MiniLM and MPNet as examples, they use different network structures, number of layers, and language features learned on large-scale corpora, which leads to different ways of capturing text semantics. It is this difference in the underlying mechanism that often gives different results when inferring similarity or ranking.
 
    The amount of text used in the current test may be relatively limited, and personal description texts are often short and diverse in content. Due to the small amount of data and different text styles, any subtle differences in feature extraction may be magnified, resulting in inconsistent weights assigned to specific sentences or keywords by different models, which greatly affects the order of similarity ranking.
 
    Different models do not judge "similarity" in exactly the same way. Some models may pay more attention to keyword entities, while others tend to capture semantic integrity or context associations. Therefore, even for the same text, different models may have different "focus points". When the amount of data is relatively small and the text content varies greatly, this difference in "focus points" often makes it difficult to maintain consistent ranking results.
+   
+## Task4: Dimension Reduction Analysis
+
+### Experiment Results
+
+| Seed  | 42   | 52   | 72   |
+|-------|------|------|------|
+| Default Parameter | 0.21 | 0.44 | 0.11 |
+| Best Parameter    | 0.64 | 0.50 | 0.53 |
+
+(Note: The values represent Rank Correlation.)
+
+### Findings
+With the default parameters, the **rank correlation** between embeddings before and after dimensionality reduction is **0.21** when `seed=42`.  
+After parameter optimization, this increases significantly to **0.64**, effectively capturing the desired patterns, demonstrating the effectiveness of parameter tuning.
+
+For `seed=52` and `seed=62`, the rank correlation with default parameters is **0.44** and **0.11**, respectively.  
+Using the optimized parameters (originally tuned for `seed=42`), the correlation improves to **0.50** and **0.53**, showing that the optimization generalizes well across different seeds.
