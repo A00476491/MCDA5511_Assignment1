@@ -8,13 +8,18 @@
 # In[141]:
 
 
-get_ipython().system('pip install umap-learn')
-get_ipython().system('pip install sentence-transformers')
-get_ipython().system('pip install pyvis')
-get_ipython().system('pip install branca')
-get_ipython().system('pip install matplotlib')
-get_ipython().system('pip install seaborn')
-get_ipython().system('pip install --upgrade pip')
+import subprocess
+import sys
+
+# Installing required packages using subprocess
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'umap-learn'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'sentence-transformers'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyvis'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'branca'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'matplotlib'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'seaborn'])
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+
 
 
 # ## Imports
@@ -41,6 +46,7 @@ from textwrap import wrap
 import json
 import pickle
 import numpy as np
+import os
 
 project_path = './'
 
@@ -62,7 +68,9 @@ project_path='./'
 
 # Read attendees and their responses from a CSV file, replace attendees.csv with own link or file name
 attendees_map = {}
-with open(project_path+ 'MCDA5511-classmates - 2025.csv', newline='') as csvfile:
+project_path = os.path.abspath('./')  # Get the absolute path of the current working directory
+file_path = os.path.join(project_path, 'MCDA5511-classmates - 2025.csv')
+with open(file_path, newline='') as csvfile:
     attendees = csv.reader(csvfile, delimiter=',', quotechar='"')
     next(attendees)  # Skip the header row
     for row in attendees:
