@@ -25,6 +25,29 @@
 5. Below is a visualization where each point represents a person's interests, and the distance between points reflects the similarity of interests.
    ![visualization](visualization.png)
 
+## What Are Embeddings
+### Concept of Embedding
+Embedding is a method of converting text (words, phrases, or sentences) into numerical representations, enabling computers to understand and process natural language.
+Its core idea is that texts with similar meanings should be closer together in the numerical space.
+
+Think of each word or sentence as a unique point on a map, where words with similar meanings are located near each other.
+For easy example, the words “happy” and “joyful” will be close together, while “sad” will be farther away. Similarly, 
+whole sentences with related meanings will be positioned near each other in this space.
+
+In the visualization graph, we can see Anuja and Max are close to each other because they both mentioned AI models.
+### How Embeddings Capture the Meaning of Words?
+Embeddings convert words into numbers so that computers can process them. 
+But these aren’t just random numbers—they are carefully designed so that similar words get similar number patterns.
+
+## key Machine Learning Techniques for embeddings:
+Word2Vec:  **Word2Vec learns word relationships by predicting words in a sentence.**
+
+   Two methods:
+
+`Skip-Gram:` Predicts surrounding words given a target word.
+
+`CBOW (Continuous Bag of Words)`: Predicts the target word from surrounding words.
+
 
 ## Dimension Reduction Analysis
 
